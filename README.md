@@ -1,6 +1,9 @@
 # Hyperdiscog
 ## Create Spotify playlists with an artist's entire discography
 
+- Removes duplicates when tracks are featured on multiple albums/singles
+- Adds tracks that feature on other artists' albums or compilations
+
 ### CLI Tool
 
 You need a [Spotify developer app](https://developer.spotify.com/documentation/web-api/concepts/apps) to run this.

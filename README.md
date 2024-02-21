@@ -4,23 +4,22 @@
 - Removes duplicates when tracks are featured on multiple albums/singles
 - Adds tracks that feature on other artists' albums or compilations
 
+Create an app on the [Spotify For Developers](https://developer.spotify.com/documentation/web-api/concepts/apps) site to get a client ID and client secret. 
+
+
 ### CLI Tool
-
-You need a [Spotify developer app](https://developer.spotify.com/documentation/web-api/concepts/apps) to run this.
-
-I will make a public web app, but Spotify takes forever to approve public usage of the API. 🤷🏽 Watch this space.
 
 #### Environment Variables
 ```buildoutcfg env vars
-export SPOTIPY_CLIENT_ID=<spotify_client_id>
-export SPOTIPY_CLIENT_SECRET=<spotify_client_secret>
+export SPOTIPY_CLIENT_ID=<spotify client id>
+export SPOTIPY_CLIENT_SECRET=<spotify client secret>
 ```
 
 #### Install
 ```bash
  virtualenv venv
  source venv/bin/activate
- pip install -r requirements.txt
+ pip install spotipy==2.23.0
 ```
 
 #### Run
@@ -29,4 +28,28 @@ export SPOTIPY_CLIENT_SECRET=<spotify_client_secret>
 python cli.py 
 ```
 
-Edit `available_market = None` in spotify_client.py to your country code to only include tracks available to you
+### Web App
+
+Add `http://0.0.0.0:8080/` to the Redirect URIs in your [Spotify app settings](https://developer.spotify.com/dashboard)
+
+
+#### Environment Variables
+```buildoutcfg env vars
+export HOST=http://0.0.0.0:8080
+export SPOTIPY_CLIENT_ID=<spotify client id>
+export SPOTIPY_CLIENT_SECRET=<spotify client secret>
+export SESSION_SECRET_KEY=<session secret key>
+```
+
+#### Install
+```bash
+ virtualenv venv
+ source venv/bin/activate
+ pip install  -r requirements.txt
+```
+
+#### Run
+
+```bash
+gunicorn app:app --bind 0.0.0.0:8080 
+```

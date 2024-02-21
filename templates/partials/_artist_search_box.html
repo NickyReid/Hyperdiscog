@@ -1,0 +1,22 @@
+<form id="artistNameForm" method="post"
+      onsubmit="return formLoadingButton('submitButton', 'artistNameForm', 'artist-name', 'Searching...')">
+    <div class="row input-group-newsletter">
+        <div class="col"><input class="form-control" id="artist-name" name="search_artist"
+                                placeholder="Search artist"
+                                aria-label="Artist" data-sb-validations="required,"/>
+        </div>
+        <input id="tz-offset" name="tz_offset" type="hidden">
+        <input id="tz" name="tz" type="hidden">
+        <script>
+                                            var tz_offset = new Date().getTimezoneOffset();
+                                            var tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+                                            console.log("Timezone offset: " + tz_offset);
+                                            console.log("Timezone: " + tz);
+                                            document.getElementById('tz-offset').value = tz_offset;
+                                            document.getElementById('tz').value = tz;
+
+
+        </script>
+        <div class="col-auto"><input class="btn btn-primary" id="submitButton" type="submit" value="Submit"></div>
+    </div>
+</form>

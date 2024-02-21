@@ -6,11 +6,12 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 HOST = os.getenv("HOST")
-AUTH_SCOPE = "playlist-modify-private"
+AUTH_SCOPE = ["playlist-modify-private", "playlist-read-private"]
 ADD_TO_PLAYLIST_BATCH_LIMIT = 100
 GET_ALBUMS_BATCH_LIMIT = 20
 
-# available_market = "ZA"  # TODO config
+# TODO get from Spotify user profile
+# available_market = "ZA"
 available_market = None
 
 
@@ -47,14 +48,52 @@ class SpotifyClient:
         search_params = {"q": f"artist:{artist_name}", "type": "artist", "limit": 50}
         search_result = self.spotify_client.search(**search_params)
         for item in search_result.get("artists", {}).get("items", []):
+            img = item["images"][0].get("url") if item.get("images") else None
             result.append({
                 "id": item.get("id"),
                 "name": item.get("name"),
-                "genres": item.get("genres")
+                "genres": item.get("genres", [])[:3],
+                "img_url": img
             })
         return result
 
-    def make_playlist(self, artist_id, artist_name):
+    def get_album_ids_for_artist(self, artist_id: str) -> [str]:
+        album_data = self.get_albums(artist_id)
+        return [album["id"] for album in album_data]
+
+    def get_album_summaries_for_artist(self, artist_id: str) -> [str]:
+        result = {
+            "artist_albums": {
+                "album": [],
+                "single": [],
+                "compilation": [],
+                "feature": []
+            }
+        }
+        album_data = self.get_albums(artist_id)
+        for album in album_data:
+            album_artist_ids = []
+            album_artist_names = []
+            for artist in album['artists']:
+                album_artist_ids.append(artist["id"])
+                album_artist_names.append(artist["name"])
+
+            info = {
+                "album_id": album["id"],
+                "album_type": album["album_type"],
+                "name": album["name"],
+                "release_date": album["release_date"],
+                "total_tracks": album["total_tracks"],
+                "album_artist_names": album_artist_names,
+            }
+            album_type = "feature" if album["album_type"].lower() == "appears_on" else album["album_type"]
+            if artist_id in album_artist_ids:
+                result["artist_albums"][album_type].append(info)
+            else:
+                result["artist_albums"]["feature"].append(info)
+        return result
+
+    def get_albums(self, artist_id):
         albums = []
         album_type_counts = []
         for album_type in ['album', 'single', 'appears_on', 'compilation']:
@@ -63,7 +102,6 @@ class SpotifyClient:
             while page:
                 albums.extend(page["items"])
                 page = self.spotify_client.next(page)
-
         logger.info(f"{len(albums)}: {album_type_counts[0]} albums, "
                     f"{album_type_counts[1]} singles, {album_type_counts[2]} appearances, "
                     f"{album_type_counts[3]} compilations")
@@ -71,21 +109,36 @@ class SpotifyClient:
         albums = sorted(
             albums,
             key=lambda a: a["release_date"],
-            reverse=False,
+            reverse=True
         )
+        return albums
+
+    def make_playlist(self, album_ids: [str], artist_name: str, remove_duplicates=True, album_order: str = "asc",
+                      remove_duplicates_favour: str = "length"):
+        logger.debug(f"Making playlist: artist_name={artist_name}; remove_duplicates={remove_duplicates}; "
+                     f"remove_duplicates_favour={remove_duplicates_favour}; album_order={album_order}; "
+                     f"album_ids={album_ids}")
         track_uris = []
         track_albums = {}
-        album_results = self.batch_get_albums([album["id"] for album in albums])
+        album_results = self.batch_get_albums(album_ids)
+        album_results = sorted(
+            album_results,
+            key=lambda a: a["release_date"],
+            reverse=True if "desc" in album_order.lower() else False,
+        )
         for album in album_results:
             album_artists = [a["name"].lower() for a in album["artists"]]
             for track in album["tracks"]["items"]:
                 track_artists = [a["name"].lower() for a in track["artists"]]
                 track_name = track["name"].lower()
                 if artist_name.lower() in track_artists:
+                    if available_market and available_market.upper() not in track["available_markets"]:
+                        continue
+
                     if not available_market or available_market.upper() in track["available_markets"]:
                         track_info = {"album": album["name"], "tracks_in_album": album["total_tracks"],
                                       "track_uri": track["uri"], "type": album["type"], "album_artists": album_artists,
-                                      "track_artists": track_artists}
+                                      "track_artists": track_artists, "release_date": album["release_date"]}
                         if track_albums.get(track_name):
                             track_albums[track_name].append(track_info)
                         else:
@@ -108,9 +161,18 @@ class SpotifyClient:
                     albums = albums_by_artist
                     exclude_tracks_uris.extend([t["track_uri"] for t in other_albums])
 
-                if len(albums) > 1:
-                    exclude = sorted(albums, key=lambda a: a["tracks_in_album"], reverse=True)[1:]
-                    exclude_tracks_uris.extend([t["track_uri"] for t in exclude])
+                if remove_duplicates:
+                    if len(albums) > 1:
+                        exclude = []
+                        if remove_duplicates_favour.lower() == "length":
+                            exclude = sorted(albums, key=lambda a: a["tracks_in_album"],
+                                             reverse=True)[1:]
+                        elif remove_duplicates_favour.lower() == "new":
+                            exclude = sorted(albums, key=lambda a: a["release_date"],
+                                             reverse=True)[1:]
+                        elif remove_duplicates_favour.lower() == "old":
+                            exclude = sorted(albums, key=lambda a: a["release_date"])[1:]
+                        exclude_tracks_uris.extend([t["track_uri"] for t in exclude])
 
         track_uris_to_add = [uri for uri in track_uris if uri not in exclude_tracks_uris]
         playlist_id, playlist_url = self.create_playlist(track_uris_to_add, artist_name)

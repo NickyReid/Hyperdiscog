@@ -1,0 +1,82 @@
+<div class="masthead-content text-white" style="padding-left: 15px;">
+    <h1 class="fst-italic lh-1 mb-4" style="text-align: center;">Playlist Options</h1>
+    <form method="post">
+        <div>
+            <div style="text-align: center;padding-bottom: 10px;">
+                <div>
+                    <label for="remove-duplicates"> Remove duplicate tracks </label>
+                    <label class="switch">
+                        <input id="remove-duplicates" name="remove_duplicates" type="checkbox" class="switch-input"
+                               onclick="toggleRemoveDuplicates();" checked>
+                        <span class="switch-label"></span>
+                        <span class="switch-handle"></span>
+                    </label>
+                </div>
+
+                <div id="remove-duplicates-options" style="display:block;font-size: small;">
+                    <div>
+                        <input type="radio" id="remove-duplicates-favour-length" name="remove_duplicates_favour"
+                               value="length" checked>
+                        <label for="remove-duplicates-favour-length"> Favour longer albums </label>
+                    </div>
+                    <div>
+                        <input type="radio" id="remove-duplicates-favour-old" name="remove_duplicates_favour"
+                               value="old">
+                        <label for="remove-duplicates-favour-old"> Favour older releases </label>
+                    </div>
+                    <div>
+                        <input type="radio" id="remove-duplicates-favour-new" name="remove_duplicates_favour"
+                               value="new">
+                        <label for="remove-duplicates-favour-new"> Favour newer releases </label>
+                    </div>
+
+                </div>
+            </div>
+            <div style="text-align: center;">
+                Playlist order
+                <div style="font-size:small;">
+                    <input type="radio" id="album-order-desc" name="album_order" value="asc" checked>
+                    <label for="album-order-desc"> Oldest first </label>
+                    <input type="radio" id="album-order-asc" name="album_order" value="desc">
+                    <label for="album-order-asc"> Newest first </label>
+                </div>
+            </div>
+
+        </div>
+
+        {% include 'partials/_create_playlist_btn.html' %}
+
+        <div>
+            {% for album_type, albums in artist_albums.get("artist_albums").items() %}
+            {% if albums %}
+            <div style="text-align:center;">
+                <input type="checkbox" id="{{ album_type }}-type-chkbx" name="{{ album_type }}_type_selection" checked
+                       onclick="toggleAlbumTypeSelected('{{ album_type }}')">
+                <label for="{{ album_type }}-type-chkbx"><h3> {{ album_type|title }}s </h3></label>
+            </div>
+            <div id="{{ album_type }}-list" style="display:block;">
+                {% for album in albums %}
+                <div class="row">
+                    <div>
+                        <input type="checkbox" id="{{ album_type }}-album-id-{{ album['album_id'] }}-chkbx"
+                               name="{{ album_type }}_album_id_{{ album['album_id'] }}" checked>
+                        <label for="{{ album_type }}-album-id-{{ album['album_id'] }}-chkbx" style="font-size:small;">
+                            {{ album['name'] }} </label>
+                        <span style="font-size:small;color:#5bb9b9;">
+                             - {{ album['album_artist_names']|join(', ')  }} -
+                         </span>
+                        <span style="font-size:x-small;color: grey;">({{ album['release_date'][:4] }})</span>
+
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            <br/>
+
+            {% endif %}
+            {% endfor %}
+        </div>
+        {% include 'partials/_create_playlist_btn.html' %}
+    </form>
+
+</div>

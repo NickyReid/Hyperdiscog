@@ -1,0 +1,26 @@
+<div class="masthead-content text-white" style="padding-left: 15px;">
+    <h1 class="fst-italic lh-1 mb-4">Search results for '{{ search_artist }}':</h1>
+    <div style="text-align: center;font-size: larger;padding: 6px 10px;">
+        {% for artist in artist_search_results %}
+        <form method="post" id="{{ artist['id'] }}-form">
+            <div class="row" style="text-align: left;padding-bottom:10px;"
+                 onClick="document.forms['{{ artist['id'] }}-form'].submit();">
+                <input type="hidden" name="selected_artist_id" value="{{ artist['id'] }}">
+                <div style="width:15%">
+                    {% if artist['img_url'] %}
+                    <img src="{{ artist['img_url'] }}" width="60px">
+                    {% endif %}
+                </div>
+                <div style="width:75%;margin: 10px;">
+                    <input type="hidden" name="selected_artist_name" value="{{ artist['name'] }}">
+                    {{ artist['name'] }}
+                    {% if artist['genres'] %}
+                    <span style="font-size:small;color: grey;"> ({{ artist['genres']|join(', ') }}) </span>
+                    {% endif %}
+
+                </div>
+            </div>
+        </form>
+        {% endfor %}
+    </div>
+</div>

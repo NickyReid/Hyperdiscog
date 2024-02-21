@@ -19,7 +19,8 @@ class PlaylistMaker:
             selected_artist_idx = input(select_artist_prompt)
             selected_artist = artist_search_results[int(selected_artist_idx)]
         print(f"Creating discography playlist for {selected_artist['name']}...")
-        playlist_id, playlist_url = spotify_client.make_playlist(selected_artist["id"], selected_artist["name"])
+        album_ids = spotify_client.get_album_ids_for_artist(selected_artist["id"])
+        playlist_id, playlist_url = spotify_client.make_playlist(album_ids, selected_artist["name"])
         print(f"Created playlist: {playlist_url}")
 
 

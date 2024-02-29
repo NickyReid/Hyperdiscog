@@ -27,6 +27,7 @@ export SPOTIPY_CLIENT_SECRET=<spotify client secret>
 ```bash
 python cli.py 
 ```
+`python cli.py --help` will show you the available configuration options
 
 ### Web App
 
